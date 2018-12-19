@@ -1,10 +1,11 @@
 import logging
-import time
 from enum import Enum
 from datetime import datetime
 from pprint import pprint
 
 import requests as r
+
+from utils import handle_response, is_ready
 
 
 class Route(Enum):
@@ -35,7 +36,7 @@ def get_logger(name):
     return logger
 
 
-class AviataApi:
+class Api:
     def __init__(self):
         self.base_url = 'https://api.platform.​staging.aviata.team​/airflow/'
         self.token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIzMWM1ZDZmNy03NGJh" \
@@ -48,61 +49,33 @@ class AviataApi:
         self._sesh.headers.update({'Authorization': f'Bearer {self.token}'})
         self.logger = get_logger('main')
 
+    @handle_response
     def _request(self, method: str, url: str, _json):
-        if method == 'GET':
-            resp = self._sesh.get(url)
-        else:
-            resp = self._sesh.post(url, json=_json)
-        return resp
+        return self._sesh.request(method, url, json=_json)
 
-    def _handle_response(self, method, url, _json):
-            attempts = 3
-            timeout = 10
-            while attempts:
-                try:
-                    response = self._request(method, url, _json)
-                    if response.status_code not in [200, 201]:
-                        raise r.RequestException(f'API returned response with {response.status_code} status code')
-                except Exception as e:  # Отлавливать все исключения плохо, но стоит обезопаситься от нежданных ошибок
-                    self.logger.exception(e)
-                else:
-                    return response
-                finally:
-                    attempts -= 1
-                    time.sleep(timeout)
-
-    def request(self, method, url, _json=None):
-        return self._handle_response(method, url, _json)
-
-    def search(self, route: Route, date: datetime):
+    def route_id(self, route: Route, date: datetime):
         self.logger.info(f'Search flight with {route.value} route at {date}')
         url = self.base_url + 'search'
         payload = {'query': f'{route.value}{date.strftime("%Y%m%d")}1000E'}
-        return self.request('POST', url, _json=payload)
+        return self._request('POST', url, _json=payload).json().get('id')
 
-    def search_multiple(self, routes: list or tuple, date: datetime):
+    def routes_info(self, routes: list or tuple, date: datetime):
         flights = {date.strftime('%Y-%m-%d'): {}}
         for route in routes:
-            id_ = self.search(route, date).json()['id']
-            flights[date.strftime('%Y-%m-%d')][route] = self.get_flights(id_)
+            id_ = self.route_id(route, date)
+            flights[date.strftime('%Y-%m-%d')][route] = self.route_info(id_)
         return flights
 
-    def get_flights(self, _id):
-        self.logger.info(f'Check if {_id} result is ready')
-        url = self.base_url + f'search/results/{_id}'
-        resp = None
-        while resp and resp.json()['status'] != 'done':
-            resp = self.request(method='GET', url=url)
-        else:
-            return resp
-
+    @is_ready
+    def route_info(self, id_):
+        self.logger.info(f'Get route info by {id_} id')
+        url = self.base_url + f'search/results/{id_}'
+        return self._request(method='GET', url=url)
 
 
 if __name__ == '__main__':
-    api = AviataApi()
-    res = api.search(Route.ALA_CIT, datetime(2019, 1, 1))
+    api = Api()
+    res = api.route_id(Route.ALA_CIT, datetime(2019, 1, 1))
     _id = res.json()['id']
-    res = api.get_flights(_id)
+    res = api.route_info(_id)
     pprint(res.json()['items'])
-
-
