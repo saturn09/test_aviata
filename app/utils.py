@@ -1,14 +1,30 @@
 import time
+import logging
+
+
+def get_logger(name):
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.DEBUG)
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.INFO)
+    fh = logging.FileHandler(filename=name + '.log')
+    fh.setLevel(logging.DEBUG)
+    frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(msg)s')
+    sh.setFormatter(frmt)
+    fh.setFormatter(frmt)
+    logger.addHandler(sh)
+    logger.addHandler(fh)
+    return logger
 
 
 def handle_response(req):
     """
-    Re-sends requests on exceptions or inappropriate status codes
+    Переотправляет запросы при ошибках или неожиданных кодах статуса
 
     :param req: request function
     :return: response
     """
-    def handled(self, method, url, _json):
+    def handled(self, method, url, _json=None):
         attempts = 3
         timeout = 10
         while attempts:
@@ -29,16 +45,16 @@ def handle_response(req):
 
 def is_ready(func):
     """
-    Checks if status of response is "done"
+    Проверяет если статус ответа по информации о рейсе имеет значение "done"
 
-    :param func: route info fetcher
-    :return: route payload [price, date, dep, arr, flight, etc.]
+    :param func: функция получения информации о рейсе
+    :return: полезная нагрузка [price, date, dep, arr, flight, etc.]
     """
     def asserted(self, id_):
         attempts = 3
         timeout = 5
         while attempts:
-            response = func(id_)
+            response = func(self, id_)
             if response.json()['status'] == 'done':
                 return response
             else:
