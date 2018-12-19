@@ -20,14 +20,14 @@ class Api:
         return self._sesh.request(method, url, json=_json)
 
     def route_id(self, route: Route, date: datetime):
-        self.logger.info(f'Search flight with {route.value} route at {date}')
+        self.logger.info(f'Get ID for {route.value} route at {date}')
         url = self.base_url + 'search'
         payload = {'query': f'{route.value}{date.strftime("%Y%m%d")}1000E'}
         return self._request('POST', url, _json=payload).json().get('id')
 
     @is_ready
-    def route_info(self, id_):
-        self.logger.info(f'Get route info by {id_} id')
+    def flights_info(self, id_):
+        self.logger.info(f'Get flights by {id_} ID')
         url = self.base_url + f'search/results/{id_}'
         return self._request(method='GET', url=url)
 
@@ -35,15 +35,15 @@ class Api:
 class Client:
     def __init__(self, api: Api):
         """
-        Использует определенный источник данных для получения информации о рейсах
+        Использует api для получения информации о рейсах
 
-        :param api: источник информации
+        :param api: источник данных о рейсах
         """
         self.api = api
 
     def list_flights(self, route: Route, date: datetime):
         id_ = self.api.route_id(route, date)
-        return self.api.route_info(id_).json()['items']
+        return self.api.flights_info(id_).json()['items']
 
 
 class View:
@@ -59,7 +59,6 @@ class Flight:
 
 if __name__ == '__main__':
     api = Api()
-    id_ = api.route_id(Route.ALA_CIT, datetime(2019, 1, 1))
-    res = api.route_info(id_)
-    pprint(res.json()['items'])
     c = Client(api)
+    flights = c.list_flights(Route.ALA_CIT, datetime(2019, 1, 1))
+    pprint(flights)
