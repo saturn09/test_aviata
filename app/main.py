@@ -43,13 +43,7 @@ class Client:
 
     def list_flights(self, route: Route, date: datetime):
         id_ = self.api.route_id(route, date)
-        return self.api.flights_info(id_).json()['items']
-
-
-class View:
-    @classmethod
-    def to_csv(cls, data: dict):
-        pass
+        return [Flight.from_json(j) for j in self.api.flights_info(id_).json()['items']]
 
 
 class Flight:
@@ -61,6 +55,14 @@ class Flight:
         self.price = price
         self.airline = airline
         self.transit_flights = []
+
+    def __repr__(self):
+        return f"Flight: Departure - {self.dep}\n" \
+            f"Arrival - {self.arr}\n" \
+            f"Departure Time - {self.dep_at}\n" \
+            f"Arrival Time - {self.arr_at}\n" \
+            f"Airline - {self.airline}\n" \
+            f"Price - {self.price or ''}"
 
     @classmethod
     def from_json(cls, json_: dict):
@@ -85,13 +87,11 @@ class Flight:
                 )
         return f
 
-    def __repr__(self):
-        return f"Flight: Departure - {self.dep}\n\
-                         Arrival - {self.arr}\n\
-                         Departure Time - {self.dep_at}\n\
-                         Arrival Time - {self.arr_at}\n\
-                         Airline - {self.airline}\n\
-                         Price - {self.price or ''}"
+
+class View:
+    @classmethod
+    def to_csv(cls, data: dict):
+        pass
 
 
 if __name__ == '__main__':
