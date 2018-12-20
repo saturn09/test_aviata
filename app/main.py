@@ -48,13 +48,50 @@ class Client:
 
 class View:
     @classmethod
-    def to_csv(self, data: dict):
+    def to_csv(cls, data: dict):
         pass
 
 
 class Flight:
-    def __init__(self, dep, arr, dep_at, arr_at):
-        pass
+    def __init__(self, dep, arr, dep_at, arr_at, airline, price=None):
+        self.dep = dep
+        self.arr = arr
+        self.dep_at = dep_at
+        self.arr_at = arr_at
+        self.price = price
+        self.airline = airline
+        self.transit_flights = []
+
+    @classmethod
+    def from_json(cls, json_: dict):
+        f = cls(
+            dep=json_['flights'][0]['segments'][0]['dep']['airport'],
+            arr=json_['flights'][0]['segments'][0]['arr']['airport'],
+            dep_at=json_['flights'][0]['segments'][0]['dep']['at'],
+            arr_at=json_['flights'][0]['segments'][0]['arr']['at'],
+            price=json_['price']['amount'],
+            airline=json_['flights'][0]['segments'][0]['airline'],
+        )
+        if len(json_['flights'][0]['segments']) > 1:
+            for flight in json_['flights'][0]['segments'][1:]:
+                f.transit_flights.append(
+                    cls(
+                        dep=flight['dep']['airport'],
+                        arr=flight['arr']['airport'],
+                        dep_at=flight['dep']['at'],
+                        arr_at=flight['arr']['at'],
+                        airline=flight['airline']
+                    )
+                )
+        return f
+
+    def __repr__(self):
+        return f"Flight: Departure - {self.dep}\n\
+                         Arrival - {self.arr}\n\
+                         Departure Time - {self.dep_at}\n\
+                         Arrival Time - {self.arr_at}\n\
+                         Airline - {self.airline}\n\
+                         Price - {self.price or ''}"
 
 
 if __name__ == '__main__':
