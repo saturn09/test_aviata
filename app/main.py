@@ -1,10 +1,10 @@
-from datetime import datetime
 from pprint import pprint
+from datetime import datetime
 
 import requests as r
 
-from app.utils import handle_response, is_ready, get_logger
 from creds import TOKEN, Route
+from app.utils import handle_response, is_ready, get_logger
 
 
 class Api:
@@ -47,7 +47,9 @@ class Client:
 
 
 class Flight:
-    def __init__(self, dep, arr, dep_at, arr_at, airline, price=None):
+    def __init__(self, route, dep, arr, dep_at,
+                 arr_at, airline, price=None):
+        self.route = route
         self.dep = dep
         self.arr = arr
         self.dep_at = dep_at
@@ -57,7 +59,8 @@ class Flight:
         self.transit_flights = []
 
     def __repr__(self):
-        return f"Flight: Departure - {self.dep}\n" \
+        return f"Flight: Route - {self.route}\n" \
+            f"Departure - {self.dep}\n" \
             f"Arrival - {self.arr}\n" \
             f"Departure Time - {self.dep_at}\n" \
             f"Arrival Time - {self.arr_at}\n" \
@@ -66,7 +69,9 @@ class Flight:
 
     @classmethod
     def from_json(cls, json_: dict):
+        route = json_['$meta']['search_query'][:7]
         f = cls(
+            route=route,
             dep=json_['flights'][0]['segments'][0]['dep']['airport'],
             arr=json_['flights'][0]['segments'][0]['arr']['airport'],
             dep_at=json_['flights'][0]['segments'][0]['dep']['at'],
@@ -78,6 +83,7 @@ class Flight:
             for flight in json_['flights'][0]['segments'][1:]:
                 f.transit_flights.append(
                     cls(
+                        route=route,
                         dep=flight['dep']['airport'],
                         arr=flight['arr']['airport'],
                         dep_at=flight['dep']['at'],
@@ -86,6 +92,17 @@ class Flight:
                     )
                 )
         return f
+
+    def to_dict(self):
+        return {
+            'Route': self.route,
+            'Departure': self.dep,
+            'Arrival': self.arr,
+            'Departure Time': self.dep_at,
+            'Arrival Time': self.arr_at,
+            'Airline': self.airline,
+            'Price': self.price
+        }
 
 
 class View:
