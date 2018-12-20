@@ -1,4 +1,3 @@
-from pprint import pprint
 from datetime import datetime
 
 import requests as r
@@ -109,10 +108,3 @@ class View:
     @classmethod
     def to_csv(cls, data: dict):
         pass
-
-
-if __name__ == '__main__':
-    api = Api()
-    c = Client(api)
-    flights = c.list_flights(Route.ALA_CIT, datetime(2019, 1, 1))
-    pprint(flights)
