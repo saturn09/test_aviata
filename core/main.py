@@ -3,8 +3,8 @@ from datetime import datetime
 
 import requests as r
 
-from creds import TOKEN, Route
-from app.utils import handle_response, is_ready, get_logger
+from .creds import TOKEN, Route
+from .utils import handle_response, is_ready, get_logger
 
 
 class Api:
