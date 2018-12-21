@@ -54,7 +54,8 @@ class Flight:
             f"Departure Time - {self.dep_at}\n" \
             f"Arrival Time - {self.arr_at}\n" \
             f"Airline - {self.airline}\n" \
-            f"Price - {self.price or ''}"
+            f"Price - {self.price or ''}\n" \
+            f"Transits - [{self.transit_flights}]"
 
     @classmethod
     def from_json(cls, json_: dict):
@@ -90,7 +91,8 @@ class Flight:
             'Departure Time': self.dep_at,
             'Arrival Time': self.arr_at,
             'Airline': self.airline,
-            'Price': self.price
+            'Price': self.price,
+            'Transits': self.transit_flights
         }
 
 
