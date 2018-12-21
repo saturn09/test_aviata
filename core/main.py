@@ -30,19 +30,9 @@ class Api:
         url = self.base_url + f'search/results/{id_}'
         return self._request(method='GET', url=url)
 
-
-class Client:
-    def __init__(self, api: Api):
-        """
-        Использует api для получения информации о рейсах
-
-        :param api: источник данных о рейсах
-        """
-        self.api = api
-
     def list_flights(self, route: Route, date: datetime):
-        id_ = self.api.route_id(route, date)
-        return [Flight.from_json(j) for j in self.api.flights_info(id_).json()['items']]
+        id_ = self.route_id(route, date)
+        return [Flight.from_json(j) for j in self.flights_info(id_).json()['items']]
 
 
 class Flight:
