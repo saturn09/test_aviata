@@ -59,4 +59,5 @@ def is_ready(func):
                 return response
             else:
                 time.sleep(timeout)
+                attempts -= 1
     return asserted
