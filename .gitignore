@@ -2,4 +2,5 @@
 venv/
 *.csv
 *.log
+*/__pycache__/
 
