@@ -5,34 +5,53 @@ import requests as r
 from .creds import TOKEN, Route
 from .utils import handle_response, is_ready, get_logger
 
+import aiohttp
+
 
 class Api:
     def __init__(self):
         self.base_url = 'https://api.platform.​staging.aviata.team​/airflow/'
         self.token = TOKEN
         self._sesh = r.Session()
-        self._sesh.headers.update({'Authorization': f'Bearer {self.token}'})
+        self._headers = {'Authorization': f'Bearer {self.token}'}
+        self._sesh.headers.update(self._headers)
         self.logger = get_logger('main')
 
     @handle_response
-    def _request(self, method: str, url: str, _json):
-        return self._sesh.request(method, url, json=_json)
+    async def async_request(self, method, url, _json=None):
+        async with aiohttp.ClientSession(headers=self._headers) as session:
+            resp = await session.request(method, url, json=_json)
+            a_resp = AsyncResponse(
+                text=await resp.text(),
+                json=await resp.json(),
+                status_code=resp.status
+            )
+            return a_resp
 
-    def route_id(self, route: Route, date: datetime):
+    async def route_id(self, route: Route, date: datetime):
         self.logger.info(f'Get ID for {route.value} route at {date}')
         url = self.base_url + 'search'
         payload = {'query': f'{route.value}{date.strftime("%Y%m%d")}1000E'}
-        return self._request('POST', url, _json=payload).json().get('id')
+        return await self.async_request(method='POST', url=url, _json=payload)
 
     @is_ready
-    def flights_info(self, id_):
+    async def flights_info(self, id_):
         self.logger.info(f'Get flights by {id_} ID')
         url = self.base_url + f'search/results/{id_}'
-        return self._request(method='GET', url=url)
+        return await self.async_request(method='GET', url=url)
 
-    def list_flights(self, route: Route, date: datetime):
-        id_ = self.route_id(route, date)
-        return [Flight.from_json(j) for j in self.flights_info(id_).json()['items']]
+    async def list_flights(self, route: Route, date: datetime):
+        route_id = await self.route_id(route, date)
+        id_ = route_id.json['id']
+        flights = await self.flights_info(id_)
+        return [Flight.from_json(j) for j in flights.json['items']]
+
+
+class AsyncResponse:
+    def __init__(self, text, json, status_code):
+        self.text = text
+        self.json = json
+        self.status_code = status_code
 
 
 class Flight:

@@ -1,4 +1,4 @@
-import time
+import asyncio
 import logging
 
 
@@ -24,12 +24,12 @@ def handle_response(req):
     :param req: request function
     :return: response
     """
-    def handled(self, method, url, _json=None):
+    async def handled(self, method, url, _json=None):
         attempts = 3
         timeout = 10
         while attempts:
             try:
-                response = req(self, method, url, _json)
+                response = await req(self, method, url, _json)
                 if response.status_code not in [200, 201]:
                     raise ConnectionError(
                         f'API returned response with {response.status_code} status code')
@@ -39,7 +39,7 @@ def handle_response(req):
                 return response
             finally:
                 attempts -= 1
-                time.sleep(timeout)
+                await asyncio.sleep(timeout)
     return handled
 
 
@@ -50,14 +50,14 @@ def is_ready(func):
     :param func: функция получения информации о рейсе
     :return: полезная нагрузка [price, date, dep, arr, flight, etc.]
     """
-    def asserted(self, id_):
+    async def asserted(self, id_):
         attempts = 3
         timeout = 5
         while attempts:
-            response = func(self, id_)
-            if response.json()['status'] == 'done':
+            response = await func(self, id_)
+            if response.json['status'] == 'done':
                 return response
             else:
-                time.sleep(timeout)
+                await asyncio.sleep(timeout)
                 attempts -= 1
     return asserted
