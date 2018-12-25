@@ -27,7 +27,6 @@ async def main():
     cheapest_as_dict = [c.to_dict() for c in cheapest]
 
     table = pd.DataFrame(cheapest_as_dict)
-    pprint(table)
     table.to_csv('test.csv', sep=',', encoding='utf-8')
 
 
