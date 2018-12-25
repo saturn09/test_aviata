@@ -8,7 +8,7 @@ def get_logger(name):
     sh = logging.StreamHandler()
     sh.setLevel(logging.INFO)
     fh = logging.FileHandler(filename=name + '.log')
-    fh.setLevel(logging.DEBUG)
+    fh.setLevel(logging.ERROR)
     frmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(msg)s')
     sh.setFormatter(frmt)
     fh.setFormatter(frmt)
