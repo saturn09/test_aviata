@@ -1,11 +1,14 @@
+import os
+
+import aiohttp
 from datetime import datetime
 
-import requests as r
 
 from .creds import TOKEN, Route
 from .utils import handle_response, is_ready, get_logger
 
-import aiohttp
+import pandas as pd
+import requests as r
 
 
 class Api:
@@ -84,7 +87,7 @@ class Flight:
             f"Arrival Time - {self.arr_at}\n" \
             f"Airline - {self.airline}\n" \
             f"Price - {self.price or ''}\n" \
-            f"Transits - [{self.transit_flights}]"
+            f"Transits - {self.transit_flights}"
 
     @classmethod
     def from_json(cls, json_: dict):
@@ -127,5 +130,16 @@ class Flight:
 
 class View:
     @classmethod
-    def to_csv(cls, data: dict):
-        pass
+    def to_csv(cls, data: list, path: str):
+        """
+        Записывает данные в табличном представлении .csv
+
+        :param data: данные для записи
+        :param path: путь к конечному файлу
+        :return: None
+        """
+        df = pd.DataFrame(sorted(data, key=lambda x: x['Departure Time']))
+        _, ext = os.path.splitext(path)
+        if not ext:
+            path += '.csv'
+        df.to_csv(path, sep=';', encoding='utf-8')
