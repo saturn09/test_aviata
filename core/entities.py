@@ -1,23 +1,18 @@
 import os
-
-import aiohttp
 from datetime import datetime
 
+import aiohttp
+import pandas as pd
 
 from .creds import TOKEN, Route
 from .utils import handle_response, is_ready, get_logger
-
-import pandas as pd
-import requests as r
 
 
 class Api:
     def __init__(self):
         self.base_url = 'https://api.platform.​staging.aviata.team​/airflow/'
         self.token = TOKEN
-        self._sesh = r.Session()
         self._headers = {'Authorization': f'Bearer {self.token}'}
-        self._sesh.headers.update(self._headers)
         self.logger = get_logger('main')
 
     @handle_response
@@ -129,17 +124,25 @@ class Flight:
 
 
 class View:
+    cache = 'cache'
+
+    if not os.path.exists(cache):
+        os.mkdir(cache)
+
     @classmethod
-    def to_csv(cls, data: list, path: str):
+    def to_csv(cls, data: list, path: str, parent_dir: str = None):
         """
         Записывает данные в табличном представлении .csv
 
         :param data: данные для записи
         :param path: путь к конечному файлу
+        :param parent_dir: директория в которую будет записан файл
         :return: None
         """
         df = pd.DataFrame(sorted(data, key=lambda x: x['Departure Time']))
         _, ext = os.path.splitext(path)
         if not ext:
             path += '.csv'
+
+        path = os.path.join(parent_dir or cls.cache, path)
         df.to_csv(path, sep=';', encoding='utf-8')
