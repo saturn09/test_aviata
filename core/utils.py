@@ -58,6 +58,6 @@ def is_ready(func):
             if response.json['status'] == 'done':
                 return response
             else:
-                await asyncio.sleep(timeout)
                 attempts -= 1
+                await asyncio.sleep(timeout)
     return asserted
