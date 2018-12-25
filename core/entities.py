@@ -49,6 +49,16 @@ class Api:
 
 class AsyncResponse:
     def __init__(self, text, json, status_code):
+        """
+        Принимает данные из асинхронного запроса в api
+        и формирует Пользовательский Ответ.
+        Используется по причине возвращения
+        функцией-запросом - корутины, вместо объекта Ответ
+
+        :param text:
+        :param json:
+        :param status_code:
+        """
         self.text = text
         self.json = json
         self.status_code = status_code

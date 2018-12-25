@@ -4,7 +4,7 @@ from itertools import product
 from dateutil.rrule import rrule, DAILY
 from pprint import pprint
 
-from core.main import Api
+from core.entities import Api
 from core.creds import Route
 
 import pandas as pd
