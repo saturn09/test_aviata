@@ -3,7 +3,8 @@ from datetime import datetime, timedelta
 from itertools import product
 from dateutil.rrule import rrule, DAILY
 
-from core.entities import Api, View
+from core.api import Api
+from core.entities import View
 from core.creds import Route
 
 

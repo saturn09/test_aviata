@@ -10,12 +10,12 @@ TOKEN = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIzMWM1ZDZmNy03NGJh" \
 
 class Route(Enum):
     ALA_TSE = 'ALA-TSE'
-    TSE_ALA = 'TSE-ALA'
     ALA_MOW = 'ALA-MOW'
-    MOW_ALA = 'MOW-ALA'
     ALA_CIT = 'ALA-CIT'
-    CIT_ALA = 'CIT-ALA'
+    TSE_ALA = 'TSE-ALA'
     TSE_MOW = 'TSE-MOW'
+    MOW_ALA = 'MOW-ALA'
     MOW_TSE = 'MOW-TSE'
+    CIT_ALA = 'CIT-ALA'
     TSE_LED = 'TSE-LED'
     LED_TSE = 'LED-TSE'

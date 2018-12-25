@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+from .entities import AsyncResponse
 
 def get_logger(name):
     logger = logging.getLogger(name)
@@ -25,20 +26,22 @@ def handle_response(req):
     :return: response
     """
     async def handled(self, method, url, _json=None):
-        attempts = 3
-        timeout = 10
-        while attempts:
+        timeout = 5
+        while True:
             try:
                 response = await req(self, method, url, _json)
-                if response.status_code not in [200, 201]:
+                if response.status not in [200, 201]:
                     raise ConnectionError(
-                        f'API returned response with {response.status_code} status code')
+                        f'API returned response with {response.status} status code')
             except Exception as e:  # Отлавливать все исключения плохо, но стоит обезопаситься от нежданных ошибок
                 self.logger.exception(e)
             else:
-                return response
+                return AsyncResponse(
+                    text=await response.text(),
+                    json=await response.json(),
+                    status_code=response.status
+                )
             finally:
-                attempts -= 1
                 await asyncio.sleep(timeout)
     return handled
 
@@ -51,13 +54,11 @@ def is_ready(func):
     :return: полезная нагрузка [price, date, dep, arr, flight, etc.]
     """
     async def asserted(self, id_):
-        attempts = 3
         timeout = 5
-        while attempts:
+        while True:
             response = await func(self, id_)
             if response.json['status'] == 'done':
                 return response
             else:
-                attempts -= 1
                 await asyncio.sleep(timeout)
     return asserted
