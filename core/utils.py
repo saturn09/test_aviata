@@ -1,7 +1,6 @@
 import asyncio
 import logging
 
-from .entities import AsyncResponse
 
 def get_logger(name):
     logger = logging.getLogger(name)
@@ -30,17 +29,13 @@ def handle_response(req):
         while True:
             try:
                 response = await req(self, method, url, _json)
-                if response.status not in [200, 201]:
+                if response.status_code not in [200, 201]:
                     raise ConnectionError(
-                        f'API returned response with {response.status} status code')
+                        f'API returned response with {response.status_code} status code')
             except Exception as e:  # Отлавливать все исключения плохо, но стоит обезопаситься от нежданных ошибок
                 self.logger.exception(e)
             else:
-                return AsyncResponse(
-                    text=await response.text(),
-                    json=await response.json(),
-                    status_code=response.status
-                )
+                return response
             finally:
                 await asyncio.sleep(timeout)
     return handled
