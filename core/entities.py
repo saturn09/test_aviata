@@ -1,6 +1,48 @@
 import os
+from datetime import datetime
 
 import pandas as pd
+import aiohttp
+
+from .utils import handle_response, is_ready, get_logger
+from .creds import TOKEN, Route
+
+
+class Api:
+    def __init__(self):
+        self.base_url = 'https://api.platform.​staging.aviata.team​/airflow/'
+        self.token = TOKEN
+        self._headers = {'Authorization': f'Bearer {self.token}'}
+        self.logger = get_logger('main')
+
+    @handle_response
+    async def async_request(self, method, url, _json=None):
+        async with aiohttp.ClientSession(headers=self._headers) as session:
+            resp = await session.request(method, url, json=_json)
+            a_resp = AsyncResponse(
+                text=await resp.text(),
+                json=await resp.json(),
+                status_code=resp.status
+            )
+            return a_resp
+
+    async def route_id(self, route: Route, date: datetime):
+        self.logger.info(f'Get ID for {route.value} route at {date}')
+        url = self.base_url + 'search'
+        payload = {'query': f'{route.value}{date.strftime("%Y%m%d")}1000E'}
+        return await self.async_request(method='POST', url=url, _json=payload)
+
+    @is_ready
+    async def flights_info(self, id_):
+        self.logger.info(f'Get flights by {id_} ID')
+        url = self.base_url + f'search/results/{id_}'
+        return await self.async_request(method='GET', url=url)
+
+    async def list_flights(self, route: Route, date: datetime):
+        route_id = await self.route_id(route, date)
+        id_ = route_id.json['id']
+        flights = await self.flights_info(id_)
+        return [Flight.from_json(j) for j in flights.json['items']]
 
 
 class AsyncResponse:
@@ -97,10 +139,10 @@ class View:
         :param parent_dir: директория в которую будет записан файл
         :return: None
         """
-        df = pd.DataFrame(sorted(data, key=lambda x: x['Departure Time']))
+        flights_df = pd.DataFrame(data)
+        flights_df = flights_df.sort_values(by=['Departure Time', 'Route'])
         _, ext = os.path.splitext(path)
         if not ext:
             path += '.csv'
-
         path = os.path.join(parent_dir or cls.cache, path)
-        df.to_csv(path, sep=';', encoding='utf-8')
+        flights_df.to_csv(path, sep=';', encoding='utf-8')

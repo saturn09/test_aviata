@@ -3,9 +3,10 @@ from datetime import datetime, timedelta
 from itertools import product
 from dateutil.rrule import rrule, DAILY
 
-from core.api import Api
-from core.entities import View
+from core.entities import Api, View
 from core.creds import Route
+
+REQUEST_PER_SEC = 65
 
 
 async def main():
@@ -13,21 +14,30 @@ async def main():
     today = datetime.now()
     tasks = []
 
-    route_date = product(
+    route_date = list(product(
         [r for r in Route],
-        [d for d in rrule(freq=DAILY, dtstart=today, count=31)])
+        [d for d in rrule(freq=DAILY, dtstart=today, count=31)]))
 
-    for route, date in route_date:
-        task = asyncio.ensure_future(api.list_flights(route, date))
-        tasks.append(task)
+    flights = []
 
-    flights = await asyncio.gather(*tasks)
-    cheapest = [min(route_flights, key=lambda flight: flight.price).to_dict() for route_flights in flights if route_flights]
+    while route_date:
+        """
+        Отправка запросов частями, потому что сервер возвращает статусы 500 и 502 при
+        большом кол-ве запросов в секунду.
+        """
+        for route, date in route_date[:REQUEST_PER_SEC]:
+            task = asyncio.ensure_future(api.list_flights(route, date))
+            tasks.append(task)
 
-    View.to_csv(
-        data=cheapest,
-        path=f"flights_{today.strftime('%Y-%m-%d')}_{(today + timedelta(days=30)).strftime('%Y-%m-%d')}.csv"
-    )
+        flights.extend(await asyncio.gather(*tasks))
+        del tasks[:REQUEST_PER_SEC]
+        del route_date[:REQUEST_PER_SEC]
+
+    cheapest = [min(route_flights, key=lambda flight: flight.price).to_dict()
+                for route_flights in flights if route_flights]
+
+    View.to_csv(cheapest,
+                f'flights_for_30_days_from_{datetime.today().strftime("%Y-%m-%d")}')
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
