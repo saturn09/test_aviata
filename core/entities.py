@@ -8,16 +8,13 @@ from .creds import TOKEN, Route
 from .utils import handle_response, is_ready, get_logger
 
 import pandas as pd
-import requests as r
 
 
 class Api:
     def __init__(self):
         self.base_url = 'https://api.platform.​staging.aviata.team​/airflow/'
         self.token = TOKEN
-        self._sesh = r.Session()
         self._headers = {'Authorization': f'Bearer {self.token}'}
-        self._sesh.headers.update(self._headers)
         self.logger = get_logger('main')
 
     @handle_response
@@ -129,6 +126,10 @@ class Flight:
 
 
 class View:
+    cache = 'cache'
+    if not os.path.exists(cache):
+        os.mkdir(cache)
+
     @classmethod
     def to_csv(cls, data: list, path: str):
         """
@@ -138,8 +139,11 @@ class View:
         :param path: путь к конечному файлу
         :return: None
         """
-        df = pd.DataFrame(sorted(data, key=lambda x: x['Departure Time']))
+        flights_df = pd.DataFrame(data)
+        flights_df = flights_df.sort_values(by=['Departure Time', 'Route'])
         _, ext = os.path.splitext(path)
         if not ext:
             path += '.csv'
-        df.to_csv(path, sep=';', encoding='utf-8')
+        if cls.cache not in path:
+            path = os.path.join(cls.cache, path)
+        flights_df.to_csv(path, sep=';', encoding='utf-8')
